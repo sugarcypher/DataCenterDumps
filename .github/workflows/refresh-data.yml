@@ -1,0 +1,39 @@
+# Weekly: re-pull every data center from OpenStreetMap, rebuild the datasets,
+# measure green space for sites not measured yet, commit the result.
+name: refresh-data
+on:
+  schedule:
+    - cron: '17 9 * * 1'   # Mondays 09:17 UTC
+  workflow_dispatch:
+    inputs:
+      top:
+        description: 'Largest operating sites to measure (all non-operating sites are always measured)'
+        default: '200'
+permissions:
+  contents: write
+concurrency: refresh-data
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - name: Fetch OpenStreetMap
+        run: python pipeline/fetch_osm.py || python pipeline/fetch_osm.py   # second pass retries only failed boxes
+      - name: Build datasets
+        run: python pipeline/build_sites.py
+      - name: Measure green space (new sites only; cache is in the repo)
+        run: python pipeline/green_space.py --top "${{ github.event.inputs.top || '200' }}" --workers 8
+        continue-on-error: true
+      - name: Merge measurements
+        run: python pipeline/build_sites.py
+      - name: Commit
+        run: |
+          git config user.name "datacenterdumps-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add web/data data/green_cache.json
+          git diff --cached --quiet || git commit -m "data: weekly OpenStreetMap + Sentinel-2 refresh"
+          git push

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataCenterDumps</title>
+<meta name="description" content="Data center land-use tracker and calculator: where data centers are, how much land they take, what is under construction or abandoned, and how much green space was there before.">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="vendor/MarkerCluster.css">
+<link rel="stylesheet" href="vendor/MarkerCluster.Default.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='6' width='24' height='6' rx='1' fill='%230072B2'/%3E%3Crect x='4' y='14' width='24' height='6' rx='1' fill='%23E69F00'/%3E%3Crect x='4' y='22' width='24' height='6' rx='1' fill='%23009E73'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
+    <h1>DataCenterDumps</h1>
+    <span class="tagline">data center land-use tracker &amp; calculator</span>
+  </div>
+  <div class="headline" id="headline" aria-live="polite">Loading…</div>
+</header>
+
+<main class="layout">
+  <aside class="panel" id="panel">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="overview" class="active">Overview</button>
+      <button role="tab" data-tab="calc">Calculator</button>
+      <button role="tab" data-tab="sites">Sites</button>
+      <button role="tab" data-tab="site" id="tab-site" hidden>Site</button>
+      <button role="tab" data-tab="about">Method</button>
+    </nav>
+
+    <section class="tabpane active" id="pane-overview">
+      <div class="filters" id="status-filters"></div>
+      <div class="kpis" id="kpis"></div>
+      <h3>Green space at measured sites</h3>
+      <p class="hint">Sentinel-2 vegetation index inside each site footprint, growing season, before vs. after. Only sites already measured are counted; open any site to measure it.</p>
+      <div id="green-summary"></div>
+      <h3>Largest land share by country</h3>
+      <div id="top-countries"></div>
+      <h3>SatDump passes</h3>
+      <div id="satdump-list" class="hint">No SatDump passes ingested yet. See Method.</div>
+    </section>
+
+    <section class="tabpane" id="pane-calc">
+      <label class="field">Region
+        <select id="calc-region"></select>
+      </label>
+      <div class="row">
+        <button id="calc-view" class="ghost" type="button">Use current map view</button>
+      </div>
+      <fieldset class="field">
+        <legend>Count these statuses</legend>
+        <div id="calc-status"></div>
+      </fieldset>
+      <label class="check"><input type="checkbox" id="calc-estimate" checked> Estimate area for sites mapped only as a point (median mapped footprint of the same status)</label>
+      <label class="field">Land-take multiplier: <output id="calc-mult-out">1.0×</output>
+        <input type="range" id="calc-mult" min="1" max="30" step="0.5" value="1">
+      </label>
+      <p class="hint">1× counts the mapped footprint only. Acquired parcels run far larger: three 2026 Missouri campuses held 7×, 11× and 26× their building footprint in total land (<a href="https://mostpolicyinitiative.org/science-note/data-center-land-use/" target="_blank" rel="noopener">Missouri Science &amp; Technology Policy Initiative</a>).</p>
+      <div class="presets"><button data-mult="1" class="ghost">1×</button><button data-mult="7" class="ghost">7×</button><button data-mult="11" class="ghost">11×</button><button data-mult="26" class="ghost">26×</button></div>
+      <div id="calc-out" class="calc-out"></div>
+    </section>
+
+    <section class="tabpane" id="pane-sites">
+      <input type="search" id="site-search" placeholder="Search name, operator, city, country…" aria-label="Search sites">
+      <div class="row">
+        <select id="site-sort" aria-label="Sort">
+          <option value="area">Largest footprint</option>
+          <option value="green">Most green space lost</option>
+          <option value="name">Name</option>
+        </select>
+        <label class="check small"><input type="checkbox" id="site-inview"> In map view only</label>
+      </div>
+      <div class="row">
+        <button class="ghost" id="export-csv" type="button">Export CSV</button>
+        <button class="ghost" id="export-geojson" type="button">Export GeoJSON</button>
+      </div>
+      <div id="site-count" class="hint"></div>
+      <ol id="site-list" class="site-list"></ol>
+      <button id="site-more" class="ghost" type="button" hidden>Show more</button>
+    </section>
+
+    <section class="tabpane" id="pane-site">
+      <div id="site-detail"></div>
+    </section>
+
+    <section class="tabpane" id="pane-about">
+      <div class="prose" id="about">
+        <h3>What this measures</h3>
+        <p><b>Sites</b> come from OpenStreetMap: anything tagged <code>telecom=data_center</code>, <code>building=data_center</code>, lifecycle variants (<code>construction:</code>, <code>proposed:</code>, <code>disused:</code>, <code>abandoned:</code>, <code>was:</code>, <code>demolished:</code>), and construction or industrial land whose name says "data center" in several languages.</p>
+        <p><b>Status</b> follows the tag: construction prefixes or a construction landuse mean <i>under construction</i>; proposed/planned prefixes or named brownfield/greenfield land mean <i>planned</i>; disused, abandoned, was, removed, demolished mean <i>abandoned</i>. Each site shows the exact tag that decided it.</p>
+        <p><b>Footprint</b> is the geodesic area of the mapped outline. A building inside a mapped campus is shown but counted once, under the campus. Sites mapped only as a point have no measured area; the calculator can give them the median footprint of their status.</p>
+        <p><b>Share of land</b> divides footprint by the region's area from Natural Earth 1:50m boundaries (inland lakes included, so shares are slightly low). The multiplier models land acquired beyond the buildings.</p>
+        <p><b>Green space</b> uses Sentinel-2 Level-2A (10 m) from the Earth Search catalogue on AWS Open Data. Inside the footprint, in the growing season of each year, cloud and shadow pixels are removed with the scene classification layer, the Normalized Difference Vegetation Index is taken per pixel (median of up to two scenes), and the share of pixels at or above 0.3 is the green fraction. Green area = fraction × footprint. "Measure green space now" runs the same method in your browser for any site.</p>
+        <p><b>Imagery comparison</b> swipes between yearly Sentinel-2 cloudless mosaics (EOX, 2016 onward) or Esri's latest high-resolution imagery.</p>
+        <h3>Where SatDump fits</h3>
+        <p><a href="https://github.com/SatDump/SatDump" target="_blank" rel="noopener">SatDump</a> decodes weather and Earth-observation satellites you receive yourself (NOAA and MetOp AVHRR, Meteor MSU-MR, MODIS…). Those pixels are about 1 km wide, so they cannot outline a data center; they do show the vegetation state of the surrounding region on the day of your pass, independent of any company's servers. The repository ships a SatDump preset that writes a linear vegetation index as a GeoTIFF, and <code>pipeline/satdump_ingest.py</code> turns each pass into a map layer plus a per-site regional reading.</p>
+        <h3>Known gaps</h3>
+        <ul>
+          <li>OpenStreetMap coverage is uneven: well mapped in Europe and North America, sparse elsewhere; many hyperscale campuses are mapped late or only as points.</li>
+          <li>"Abandoned" depends on mappers updating tags; cancelled projects that never broke ground are rarely mapped.</li>
+          <li>The vegetation index sees living plants, not land-use designation: lawns and landscaping count as green; dry-season grassland may not.</li>
+          <li>2017 Level-2A coverage outside Europe and North America is patchy; pick a later "before" year if a site reports no scene.</li>
+        </ul>
+        <h3>Sources and licences</h3>
+        <p>Sites © OpenStreetMap contributors, ODbL. Sentinel-2 data: Copernicus, via Element 84 Earth Search on AWS Open Data. Mosaics: Sentinel-2 cloudless by EOX IT Services GmbH (2016 CC BY 4.0, later years CC BY-NC-SA 4.0). Boundaries: Natural Earth (public domain). Libraries: Leaflet, Leaflet.markercluster, geotiff.js. Code: MIT.</p>
+        <p class="hint" id="build-info"></p>
+      </div>
+    </section>
+  </aside>
+
+  <div class="mapwrap">
+    <div id="map" role="application" aria-label="Map of data center sites"></div>
+    <div class="mapbar">
+      <button id="live-refresh" type="button" title="Query OpenStreetMap now for the sites in this view">Refresh view from OpenStreetMap</button>
+      <span id="live-status" class="hint"></span>
+    </div>
+    <div class="swipe" id="swipe" hidden>
+      <div class="swipe-controls">
+        <label>Left <select id="swipe-a"></select></label>
+        <label>Right <select id="swipe-b"></select></label>
+        <button id="swipe-close" type="button" class="ghost">Close comparison</button>
+      </div>
+      <input type="range" id="swipe-range" min="0" max="100" value="50" aria-label="Before / after divider">
+      <div class="swipe-line" id="swipe-line"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+</main>
+
+<script src="vendor/leaflet.js"></script>
+<script src="vendor/leaflet.markercluster.js"></script>
+<script src="vendor/geotiff.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/ndvi.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

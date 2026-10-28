@@ -1,0 +1,11 @@
+{"version":0.6,"osm3s":{"timestamp_osm_base":"2026-10-01T00:00:00Z"},"elements":[
+{"type":"way","id":1,"tags":{"telecom":"data_center","name":"Campus A","operator":"ExampleCo"},
+ "geometry":[{"lat":39.000,"lon":-77.500},{"lat":39.000,"lon":-77.490},{"lat":39.009,"lon":-77.490},{"lat":39.009,"lon":-77.500},{"lat":39.000,"lon":-77.500}]},
+{"type":"way","id":2,"tags":{"building":"data_center","name":"Hall 1"},
+ "geometry":[{"lat":39.002,"lon":-77.498},{"lat":39.002,"lon":-77.495},{"lat":39.004,"lon":-77.495},{"lat":39.004,"lon":-77.498},{"lat":39.002,"lon":-77.498}]},
+{"type":"node","id":3,"lat":40.0,"lon":-100.0,"tags":{"construction:telecom":"data_center","name":"Future DC"}},
+{"type":"node","id":4,"lat":51.5,"lon":-0.1,"tags":{"disused:telecom":"data_center","name":"Old DC"}},
+{"type":"way","id":5,"tags":{"landuse":"construction","name":"Prairie Data Center Campus"},
+ "geometry":[{"lat":41.0,"lon":-96.0},{"lat":41.0,"lon":-95.99},{"lat":41.01,"lon":-95.99},{"lat":41.01,"lon":-96.0},{"lat":41.0,"lon":-96.0}]},
+{"type":"node","id":6,"lat":48.85,"lon":2.35,"tags":{"proposed:telecom":"data_center"}}
+]}

@@ -1,0 +1,18 @@
+{
+    "presets": [
+        {
+            "name": "DataCenterDumps Linear NDVI",
+            "expression": "cch1=({0.67um, N, -1, 20}, sun_angle_compensated_reflective_radiance, 0.000000, 46.203000);cch2=({0.86um, N, -1, 20}, sun_angle_compensated_reflective_radiance, 0.000000, 97.050700);((cch2-cch1)/((cch2+cch1) == 0 ? 0.000001 : (cch1+cch2))+1)/2",
+            "image": {
+                "geocorrect": true
+            },
+            "description": "descriptions/NDVI.md"
+        }
+    ],
+    "instruments": [
+        "avhrr_3",
+        "modis",
+        "olci",
+        "slstr_nadir"
+    ]
+}

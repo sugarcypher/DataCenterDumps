@@ -1,0 +1,14 @@
+{
+ "built_utc": "2026-10-28T03:11:31Z",
+ "osm_base_utc": "2026-10-28T02:49:21Z",
+ "sites": 5435,
+ "by_status": {
+  "operating": 5178,
+  "construction": 216,
+  "planned": 34,
+  "abandoned": 7
+ },
+ "with_footprint": 4521,
+ "nested": 1096,
+ "with_green": 392
+}
