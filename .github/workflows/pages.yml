@@ -1,8 +1,15 @@
-# Publishes web/ to GitHub Pages. Runs only when started by hand (Actions tab ->
-# pages -> Run workflow) after Pages is set to "GitHub Actions" in the repo settings,
-# so nothing is hosted until you decide to host it.
+# Publishes web/ to GitHub Pages (https://datacenters.rooted.wang; the custom domain
+# lives in the repo's Pages settings). Redeploys when web/ changes on main and after
+# each data refresh: refresh-data pushes with GITHUB_TOKEN, which doesn't fire push
+# workflows, so workflow_run picks those commits up.
 name: pages
 on:
+  push:
+    branches: [main]
+    paths: ['web/**']
+  workflow_run:
+    workflows: [refresh-data]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,6 +18,7 @@ permissions:
 concurrency: pages
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
