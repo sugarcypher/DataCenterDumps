@@ -8,6 +8,8 @@ from Sentinel-2 satellite imagery. A [SatDump](https://github.com/SatDump/SatDum
 ingest lets you add regional vegetation readings from satellites you receive
 yourself.
 
+**Live: <https://datacenters.rooted.wang>**
+
 ![sites, calculator, before/after](docs/screenshot.png)
 
 ## Run it
